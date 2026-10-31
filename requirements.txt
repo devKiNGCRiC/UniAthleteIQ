@@ -8,3 +8,8 @@ matplotlib
 seaborn
 jupyter
 ipykernel
+streamlit
+altair
+joblib
+pytest
+-e .

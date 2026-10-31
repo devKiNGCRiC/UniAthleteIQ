@@ -1,0 +1,6 @@
+experiment,eval,roc_auc,pr_auc,pr_auc_random,pr_auc_lift
+"v1 protocol (leaky), Random Forest",SMOTE before split,0.9907122873003116,0.9899013405497952,0.5,1.9798026810995903
+"Runners, Logistic Regression (final)",held-out athletes,0.6247503880381945,0.01948194531565719,0.01203056413591286,1.6193708869811807
+"Runners, Logistic Regression","same athletes, later 20% of time",0.6196171194981852,0.03127276477600176,0.018903150525087516,1.6543678650020681
+"Football severe-injury season, Logistic Regression",held-out players,0.6521286200430586,0.7985345818858972,0.7083333333333334,1.1273429391330312
+"Multi-sport wearable, Logistic Regression",5-fold CV,0.595973103241068,0.6970411372195766,0.617,1.1297263164012588

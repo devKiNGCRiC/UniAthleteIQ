@@ -3,3 +3,5 @@ __pycache__/
 .ipynb_checkpoints/
 datasets/*.csv
 outputs/models/
+*.egg-info/
+.pytest_cache/

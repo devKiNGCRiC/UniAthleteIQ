@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uniathleteiq"
+version = "2.0.0"
+description = "Leakage-free athlete injury risk prediction across sports datasets"
+authors = [{ name = "RAJ ROY" }]
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

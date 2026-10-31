@@ -1,0 +1,5 @@
+train,test,roc_auc
+Runners,Runners,0.6043695523097019
+Runners,Multi-sport (wearable),0.5925623436911527
+Multi-sport (wearable),Multi-sport (wearable),0.5888172789248067
+Multi-sport (wearable),Runners,0.6104982058311778
