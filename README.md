@@ -2,11 +2,14 @@
 
 ## 🚀 Overview
 
-UniAthleteIQ is a machine learning framework that predicts athlete injury risk from training-load, wellness and physiological data, and explains each prediction to coaches.
+UniAthleteIQ predicts athlete injury risk from training-load and wellness logs, explains each prediction to coaches, and ships as a working web app.
 
-It works with public datasets from several sports (competitive running, football, and a multi-sport wearable dataset), and it explicitly tests whether injury-risk patterns **transfer across sports**.
+It has two parts:
 
-**Version 2** rebuilds the evaluation so that every reported number comes from athletes the model has never seen. See [What changed in v2](#-what-changed-in-v2) for why the v1 numbers (96% accuracy) were not reliable.
+* **Research:** leakage-free models on public datasets (competitive running, football, multi-sport wearables), with statistical validation (repeated athlete-grouped CV, athlete-bootstrap confidence intervals, paired tests, baselines and sensitivity analyses) and an explicit cross-sport test.
+* **Product:** a FastAPI backend and a Next.js web app where athletes log training in about 30 seconds and coaches see who to check in with today, and why.
+
+See [What changed in v2](#-what-changed-in-v2) for why the original v1 numbers (96% accuracy) were not reliable.
 
 ---
 
@@ -23,8 +26,8 @@ It works with public datasets from several sports (competitive running, football
 * 🔮 **Early warning:** rank each athlete-day by injury risk from the previous 1–3 weeks of training
 * 🧍 **Personal baselines:** compare today's load and wellness with *that athlete's own normal*
 * 🌍 **Cross-sport test:** do load and effort signals learned on one sport transfer to another?
-* 🧠 **Explainable AI:** SHAP explanations for every prediction
-* 🔒 **Leakage-free evaluation:** athlete-grouped cross-validation plus a held-out set of athletes
+* 🧠 **Explainable AI:** exact per-prediction explanations (SHAP)
+* 🔒 **Leakage-free evaluation:** athlete-grouped CV, held-out athletes, and statistical tests
 
 ---
 
@@ -34,48 +37,73 @@ It works with public datasets from several sports (competitive running, football
 |---|---|---|---|
 | Competitive runners: daily + weekly training logs | athlete-day with 7-day / 3-week history | 42,680 days, 74 athletes, 575 injuries | **Main risk model** |
 | EPL football players | player-season | 1,301 seasons, 604 players | Severe-injury season (more than 28 days out) |
-| Multi-sport wearable sessions | session | 1,000 sessions | Secondary; appears synthetic (see notebook §5) |
+| Multi-sport wearable sessions | session | 1,000 sessions | Secondary; appears synthetic (see notebook 02 §5) |
 | Basketball biomechanics, NBA injury list | injured players only | — | Not usable for risk models (no uninjured comparison group) |
 
 ---
 
-## ⚙️ Methodology (v2)
+## ⚙️ Methodology
 
-1. **Feature engineering (runners):** 7-day load, hard (Z5, interval, sprint) km, rest days, **ACWR** (acute:chronic workload ratio), **monotony** and **strain** (Foster), and perceived exertion, recovery and training-success means and trends.
+1. **Feature engineering (runners):** 7-day load, hard (Z5, interval, sprint) km, rest days, **ACWR** (acute:chronic workload ratio), **monotony** and **strain** (Foster), week-over-week load log-ratios, and perceived exertion, recovery and training-success means and trends.
 2. **Personal baselines:** each feature as a z-score against the athlete's *own past days only*. There is no look-ahead, and a unit test enforces this.
 3. **Imbalance handling:** class weights. SMOTE is only ever applied inside training folds; it gave no benefit.
 4. **Models:** Logistic Regression ⭐ (final), Random Forest, XGBoost.
-5. **Evaluation:** 5-fold athlete-grouped CV for model selection, then a single test on 20% of athletes held out from the start. The main metrics are ROC-AUC and PR-AUC on the real class balance (1.35% of runner-days are injuries).
+5. **Evaluation:** 10× repeated 5-fold **athlete-grouped** CV; 95% CIs from an **athlete-level bootstrap**; **paired** bootstrap tests with Holm correction; untrained baselines (ACWR, the "ACWR > 1.5" rule, 7-day km, perceived exertion); sensitivity analyses; a final test on 15 athletes held out from the start. Main metrics are ROC-AUC and PR-AUC on the real class balance (1.35% of runner-days are injuries).
 6. **Explainability and calibration:** exact SHAP values for the linear model, Platt-calibrated probabilities, and an alert threshold chosen on training data only.
 
 ---
 
-## 🏆 Results (honest, leakage-free)
+## 🏆 Results
+
+### Runners (main model)
+
+| Evaluation | ROC-AUC (95% CI) | PR-AUC (random guess) |
+|---|---|---|
+| 10× repeated athlete-grouped CV, 59 athletes | **0.655** (0.613–0.696) | 0.026 (0.014) |
+| 15 held-out athletes, tested once | 0.620 (0.522–0.698) | 0.020 (0.012) |
+| Same athletes, last 20% of each timeline | 0.623 | 0.033 (0.019) |
+
+**In practice:** flagging the riskiest 20% of runner-days catches about **32% of injuries**, compared with 20% for random flagging. It's useful for prioritising coach check-ins, not for diagnosing individual athletes.
+
+### What the statistics show ([notebook 03](notebooks/03_statistical_validation.ipynb))
+
+* **Personal baselines significantly improve every model:** LR +0.024 ROC-AUC (95% CI 0.003–0.047), RF +0.057, XGBoost +0.048, all significant after Holm correction.
+* **Model choice does not matter:** LR, RF and XGBoost are statistically indistinguishable, so the simplest, fully explainable model is used.
+* **The model beats common workload rules:** +0.11 over ACWR, +0.12 over 7-day km and +0.16 over the popular **"ACWR > 1.5" rule, which performs at chance** in this data (ROC-AUC 0.49).
+* **Perceived effort carries most of the signal.** The athlete's average perceived exertion alone reaches 0.63, and the full model's advantage over it (+0.03) is not significant. Asking athletes how hard training felt is the most valuable thing to collect.
+* **Robust:** results barely change with the personal-history window (14, 28 or 56 days) or the football severity cut-off (14, 28 or 56 days). Most of the uncertainty comes from *which athletes* are in the data, not from how the CV folds are split.
+
+### Other datasets
 
 | Experiment | Evaluated on | ROC-AUC | PR-AUC (random guess) |
 |---|---|---|---|
-| Runners: Logistic Regression ⭐ | 15 held-out athletes | **0.625** | 0.019 (0.012) |
-| Runners: Logistic Regression | athlete-grouped 5-fold CV | 0.654 | 0.026 (0.014) |
-| Runners: same athletes, later in time | last 20% of each timeline | 0.620 | 0.031 (0.019) |
 | Football: severe-injury season | held-out players | 0.652 | 0.799 (0.708) |
 | Multi-sport wearable | 5-fold CV | 0.596 | 0.697 (0.617) |
+| Cross-sport: train runners → test multi-sport | other dataset | 0.593 | — |
+| Cross-sport: train multi-sport → test runners | other dataset | 0.610 | — |
 
-**What this means in practice:** flagging the riskiest 20% of runner-days catches about **34% of injuries**, compared with 20% for random flagging. The model is useful for prioritising coach check-ins, not for diagnosing individual athletes. Modest AUCs like these are typical of injury prediction from training logs.
+With dataset-normalised load and effort, models transfer across sources about as well as within a source (≈ 0.59–0.61). The signal is weak, and the multi-sport data appears synthetic.
 
-### Key findings
+Charts: [outputs/charts/v2/](outputs/charts/v2/), [outputs/charts/v3/](outputs/charts/v3/). Tables: [outputs/results/](outputs/results/).
 
-* **Personal baselines beat model complexity.** Comparing each athlete with their own normal improved every model (runners CV AUC 0.60–0.63 → 0.65–0.66). Logistic Regression, Random Forest and XGBoost were then tied.
-* **Top risk signals:** training **strain above the athlete's own normal**, more hard km, high peak exertion, and a jump in recent km compared with the athlete's usual level.
-* **Cross-sport:** with dataset-normalised load and effort, a model trained on one sport ranks injuries in the other about as well as a model trained on that sport itself (ROC-AUC ≈ 0.59–0.61). The signal is weak, and the multi-sport dataset appears synthetic.
-* **Data-quality findings:** the runner injury rate depends on how long an athlete has been recorded (a collection artifact the model is prevented from exploiting), and the multi-sport data has the flat distributions typical of synthetic data.
+---
 
-Charts are in [outputs/charts/v2/](outputs/charts/v2/) and result tables in [outputs/results/](outputs/results/).
+## 💻 The web app
+
+| Screen | Purpose |
+|---|---|
+| **Team** | Everyone ranked by today's risk on a "lane" track (1× = an average day), with status and the main factor |
+| **Athlete** | Today's risk, risk over 30/90/180 days, factors raising and lowering risk, last two weeks of training |
+| **Log training** | Phone-friendly daily form: sessions, km, optional intensity breakdown, effort / success / recovery sliders |
+| **How it works** | Plain-language explanation with live accuracy figures from the model |
+
+The API reuses the research feature code, and a test checks that features computed from daily logs **exactly match** the features the model was trained on (no training/serving skew). Data-quality warnings appear when fewer than 18 of the last 21 days are logged or the personal baseline is still forming.
 
 ---
 
 ## 🔍 What changed in v2
 
-The v1 notebook reported 96% accuracy (Random Forest). An audit ([notebook §1](notebooks/02_leakage_free_pipeline.ipynb)) showed that this came from data leakage:
+The v1 notebook reported 96% accuracy (Random Forest). An audit ([notebook 02 §1](notebooks/02_leakage_free_pipeline.ipynb)) showed this came from data leakage:
 
 | v1 problem | Effect |
 |---|---|
@@ -85,7 +113,16 @@ The v1 notebook reported 96% accuracy (Random Forest). An audit ([notebook §1](
 | km, exertion and recovery merged into "duration", "fatigue" and "risk score" columns | features with different meanings were mixed together |
 | Accuracy on a 50/50 resampled test set | not meaningful when 96.5% of real rows are "not injured" |
 
-Under a correct protocol the same v1 model drops from F1 0.96 to 0.58. "Sport type is the #1 predictor" was an artifact of how the datasets were merged. The original notebook is kept for reference.
+Under a correct protocol the same v1 model drops from F1 0.96 to 0.58. The original notebook is kept for reference.
+
+---
+
+## ⚠️ Known issues
+
+* **Direction of "perceived recovery" is unconfirmed.** The research data stores it on 0–1, but the documentation available here does not say whether higher means *more* or *less* recovered. Within athletes it rises after hard days, which hints that higher = less recovered. The app currently asks "How recovered do you feel?" (higher = better). Check the methods of Lövdal et al. (2021), doi:10.1123/ijspp.2020-0518, before relying on recovery-driven predictions. Details are in `src/uniathleteiq/serving.py`.
+* **Unlogged days count as rest days**, so athletes need to log every day for the estimate to be meaningful.
+* **No login yet:** the app is single-team and intended for local use until authentication is added.
+* **Runners only:** the deployed model is trained on competitive runners.
 
 ---
 
@@ -95,24 +132,34 @@ Under a correct protocol the same v1 model drops from F1 0.96 to 0.58. "Sport ty
 UniAthleteIQ/
 ├── notebooks/
 │   ├── injury_prediction_pipeline.ipynb   # v1 (original Colab pipeline, kept for reference)
-│   └── 02_leakage_free_pipeline.ipynb     # v2: audit, models, SHAP, cross-sport test
-├── src/uniathleteiq/                      # reusable package
+│   ├── 02_leakage_free_pipeline.ipynb     # audit, models, SHAP, calibration, cross-sport test
+│   └── 03_statistical_validation.ipynb    # repeated CV, bootstrap CIs, paired tests, baselines
+├── src/uniathleteiq/            # research package (shared with the API)
 │   ├── data.py          # loaders + feature engineering (workload, personal baselines)
+│   ├── serving.py       # daily logs -> model features (same code as training)
 │   ├── models.py        # model definitions
 │   ├── evaluation.py    # grouped CV, held-out split, metrics, leakage audit
-│   ├── explain.py       # per-prediction explanations
+│   ├── stats.py         # athlete bootstrap, paired tests, Holm correction
+│   ├── baselines.py     # ACWR / km / exertion reference scores
+│   ├── explain.py       # per-prediction explanations + feature labels
 │   └── plots.py         # chart styling
-├── app/streamlit_app.py # runner risk dashboard
-├── tests/               # leakage guards (pytest)
+├── scripts/
+│   ├── run_validation.py          # heavy experiments for notebook 03 (~25 min, cached)
+│   ├── train_production_model.py  # model served by the API (all 74 athletes)
+│   └── seed_demo.py               # demo athletes for the web app
+├── api/                 # FastAPI backend (SQLite locally, Postgres-ready)
+├── frontend/            # Next.js web app
+├── app/streamlit_app.py # research dashboard for held-out athletes
+├── tests/               # leakage guards, stats, serving consistency, API
 ├── datasets/            # put the Kaggle CSVs here (not committed)
-└── outputs/             # charts/, results/, models/
+└── outputs/             # charts/, results/, models/, cache/
 ```
 
 ---
 
 ## ▶️ How to Run
 
-### Locally (Windows)
+### 1. Setup (Windows)
 
 ```powershell
 python -m venv .venv
@@ -128,27 +175,42 @@ Put the Kaggle CSVs in `datasets/`:
 * `sports_injury_detection_dataset.csv`
 * (optional, v1 only) `NBA Player Injury Stats(1951 - 2023).csv`, `basketball_injury_biomechanical_dataset.csv`
 
-Then:
+### 2. Research
 
 ```powershell
-jupyter notebook notebooks/02_leakage_free_pipeline.ipynb   # run all cells (about 5 min)
-streamlit run app/streamlit_app.py                          # risk dashboard (after the notebook)
-pytest                                                      # leakage tests
+jupyter notebook notebooks/02_leakage_free_pipeline.ipynb   # about 5 min
+python scripts/run_validation.py                            # about 25 min, then:
+jupyter notebook notebooks/03_statistical_validation.ipynb  # about 3 min
+pytest                                                      # all tests
 ```
 
-### Google Colab
+### 3. Web app
 
-Upload the project folder (with `datasets/`) to Drive, `%cd` into it, run `!pip install -r requirements.txt`, then run the notebook.
+```powershell
+python scripts/train_production_model.py   # once: creates the served model
+python scripts/seed_demo.py                # optional: 6 demo athletes from the research data
+uvicorn api.main:app --reload              # API on http://localhost:8000 (docs at /docs)
+```
+
+In a second terminal:
+
+```powershell
+cd frontend
+copy .env.example .env.local
+npm install
+npm run dev                                # app on http://localhost:3000
+```
 
 ---
 
-## 🔮 Future Scope
+## 🔮 Roadmap
 
-* Sequence models (LSTM or temporal CNN) over the full daily history
-* Time-to-injury (survival) modelling
-* Datasets that record the same load measures (session RPE × duration, GPS) across several sports, for a stronger cross-sport test
-* Prospective validation with a real team; IoT wearable integration
-* More sports (Cricket, Badminton)
+* Confirm the perceived-recovery scale direction (see Known issues)
+* Authentication and multi-team support (Supabase), Docker, cloud deployment
+* A second real dataset (e.g. SoccerMon, PMData) for a stronger cross-sport test
+* Sequence models (LSTM or temporal CNN) and time-to-injury (survival) modelling
+* Paper draft following the TRIPOD+AI reporting checklist
+* Prospective pilot with a university team
 
 ---
 
@@ -162,5 +224,5 @@ MCA — Department of Computer Applications
 ## ⭐ Acknowledgements
 
 * Kaggle dataset contributors (competitive runners' training logs, EPL player injuries, multi-sport wearable data)
-* scikit-learn, XGBoost, imbalanced-learn, SHAP, Streamlit
+* scikit-learn, XGBoost, imbalanced-learn, SHAP, FastAPI, SQLModel, Next.js, Recharts, Streamlit
 * Research on training load and injury risk (ACWR, training monotony and strain)

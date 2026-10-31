@@ -73,6 +73,12 @@ def runner_engineered_features(df):
             "monotony_7d": np.where(km_std > 0, km_mean / np.where(km_std > 0, km_std, 1), np.nan),
             "acwr_3wk": np.where(chronic > 0, acute / np.where(chronic > 0, chronic, 1), np.nan),
             "km_change_vs_prev_week": acute - weekly_km[:, 1],
+            # Week-over-week load ratios on a log scale with +1 km smoothing. The dataset's own
+            # "rel total kms" columns divide by (km + 1e-6), which explodes to ~2e8 after a
+            # zero-km week and wrecks linear models; log((a+1)/(b+1)) is bounded and symmetric.
+            "km_ratio_week0_vs_1": np.log((weekly_km[:, 0] + 1) / (weekly_km[:, 1] + 1)),
+            "km_ratio_week0_vs_2": np.log((weekly_km[:, 0] + 1) / (weekly_km[:, 2] + 1)),
+            "km_ratio_week1_vs_2": np.log((weekly_km[:, 1] + 1) / (weekly_km[:, 2] + 1)),
             "exertion_mean_7d": np.nanmean(exertion, axis=1),
             "exertion_max_7d": np.nanmax(exertion, axis=1),
             "exertion_trend": np.nanmean(exertion[:, 4:], axis=1) - np.nanmean(exertion[:, :4], axis=1),
@@ -120,7 +126,7 @@ def personal_baseline_features(feats, athlete, date, cols=PERSONAL_BASE, min_his
 RUNNER_FEATURE_SETS = ("raw", "raw+engineered", "engineered", "engineered+personal")
 
 
-def load_runners(feature_set="engineered+personal"):
+def load_runners(feature_set="engineered+personal", personal_min_history=PERSONAL_MIN_HISTORY):
     """Runner athlete-days.
 
     feature_set:
@@ -128,6 +134,9 @@ def load_runners(feature_set="engineered+personal"):
       raw+engineered       - raw plus workload-science features
       engineered           - workload-science features + week-over-week ratios
       engineered+personal  - engineered plus deviation from the athlete's own baseline (final model)
+    personal_min_history:
+      days of an athlete's own history required before personal z-scores are
+      computed (exposed for sensitivity analysis; default 28).
     """
     import warnings
 
@@ -162,13 +171,13 @@ def load_runners(feature_set="engineered+personal"):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # all-rest weeks -> NaN means
             eng = runner_engineered_features(df)
-        rel = X[[c for c in X.columns if c.startswith("rel total kms")]]
-        if feature_set == "raw+engineered":
-            X = pd.concat([X, eng], axis=1)
-        else:
-            X = pd.concat([eng, rel], axis=1)
+        # "raw" columns are kept exactly as provided (including the unstable "rel total kms"
+        # ratios) so the ablation measures the dataset as published; the engineered sets
+        # use the bounded log-ratios from runner_engineered_features instead.
+        X = pd.concat([X, eng], axis=1) if feature_set == "raw+engineered" else eng
         if feature_set == "engineered+personal":
-            X = pd.concat([X, personal_baseline_features(eng, df["Athlete ID"], df["Date"])], axis=1)
+            X = pd.concat([X, personal_baseline_features(
+                eng, df["Athlete ID"], df["Date"], min_history=personal_min_history)], axis=1)
 
     return Dataset("Runners", X, df["injury"].astype(int), df["Athlete ID"],
                    meta=df[["Athlete ID", "Date"]])

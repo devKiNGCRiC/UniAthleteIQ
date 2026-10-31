@@ -31,6 +31,16 @@ def grouped_oof(model, X, y, groups, n_splits=5, seed=RANDOM_STATE):
     return oof, np.array(fold_auc)
 
 
+def repeated_grouped_oof(model, X, y, groups, seeds=range(10), n_splits=5):
+    """Run athlete-grouped CV once per seed; returns an array of shape (n_seeds, n_rows).
+
+    A single CV run depends on which athletes happen to land in which fold. With
+    only ~60 athletes that luck is substantial, so the research comparisons
+    repeat CV with different fold assignments and look at the spread.
+    """
+    return np.vstack([grouped_oof(model, X, y, groups, n_splits, seed=s)[0] for s in seeds])
+
+
 def threshold_metrics(y, p, threshold):
     yp = (p >= threshold).astype(int)
     return {"precision": precision_score(y, yp, zero_division=0),

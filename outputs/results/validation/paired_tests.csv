@@ -1,0 +1,21 @@
+family,comparison,metric,difference,ci_low,ci_high,p_value,n_boot,p_holm,significant_5pct
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",Logistic Regression: personal vs engineered,roc_auc,0.023920572311577626,0.003421735503786863,0.04651154230990304,0.024,1000,0.024,True
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",Random Forest: personal vs engineered,roc_auc,0.05718179495344833,0.033843109854939664,0.07989517318067045,0.0,1000,0.0,True
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",XGBoost: personal vs engineered,roc_auc,0.047983748280058025,0.03214580523154337,0.0644765209149342,0.0,1000,0.0,True
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",Logistic Regression: personal vs engineered,pr_auc,0.0037818899883514875,-0.0007609570194778114,0.011568796024731341,0.146,1000,0.146,False
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",Random Forest: personal vs engineered,pr_auc,0.004356222407941597,0.0007593460989891207,0.009963827042465474,0.024,1000,0.048,True
+"RQ2a: do personal baselines help? (personal vs engineered, same model)",XGBoost: personal vs engineered,pr_auc,0.008524763576324736,0.0028778645404621294,0.016425245114655065,0.0,1000,0.0,True
+RQ2b: does model choice matter? (on engineered+personal),LR vs RF,roc_auc,0.004886142004876692,-0.017094304136804152,0.02562168846677641,0.61,1000,1.0,False
+RQ2b: does model choice matter? (on engineered+personal),LR vs XGBoost,roc_auc,-0.005999159668893528,-0.02385384379084005,0.010478605363487745,0.5,1000,1.0,False
+RQ2b: does model choice matter? (on engineered+personal),RF vs XGBoost,roc_auc,-0.01088530167377022,-0.025029528603266408,0.002979571557862063,0.14,1000,0.42000000000000004,False
+RQ2b: does model choice matter? (on engineered+personal),LR vs RF,pr_auc,0.002302159060870508,-0.0028138384112609957,0.008037538340700824,0.362,1000,0.512,False
+RQ2b: does model choice matter? (on engineered+personal),LR vs XGBoost,pr_auc,-0.0021148605423488218,-0.006550972817506117,0.0013679901555386275,0.256,1000,0.512,False
+RQ2b: does model choice matter? (on engineered+personal),RF vs XGBoost,pr_auc,-0.00441701960321933,-0.00981996358408242,3.297714492099401e-05,0.052,1000,0.156,False
+Does the final model beat untrained baselines?,final LR vs ACWR (continuous),roc_auc,0.11289630686445473,0.06534139769494976,0.155452152441589,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs ACWR > 1.5 rule,roc_auc,0.16229722746136466,0.11471771118931862,0.2123185662616868,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs 7-day km,roc_auc,0.11954119960367937,0.06733828386919634,0.16732604610409565,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs Mean perceived exertion (7d),roc_auc,0.028652836438813334,-0.00408660418115776,0.06053327525847933,0.076,1000,0.076,False
+Does the final model beat untrained baselines?,final LR vs ACWR (continuous),pr_auc,0.01069042991036134,0.004278191606168707,0.020632501420312227,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs ACWR > 1.5 rule,pr_auc,0.01198493330390621,0.006030849591001774,0.02183954640598862,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs 7-day km,pr_auc,0.01153499881890299,0.00481984514240951,0.021196098627479884,0.0,1000,0.0,True
+Does the final model beat untrained baselines?,final LR vs Mean perceived exertion (7d),pr_auc,0.00428236559003279,-0.0008293741412586209,0.009750039908639247,0.104,1000,0.104,False

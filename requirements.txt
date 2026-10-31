@@ -12,4 +12,9 @@ streamlit
 altair
 joblib
 pytest
+fastapi
+uvicorn[standard]
+sqlmodel
+python-multipart
+httpx
 -e .

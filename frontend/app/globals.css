@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* Design tokens. Pine green is the brand colour; crimson and amber are reserved for
+   risk status and always appear together with an icon and a text label. */
+:root {
+  --paper: #f4f6f5;
+  --surface: #ffffff;
+  --ink: #15211e;
+  --ink-soft: #4f5f5a;
+  --line: #d3dcd8;
+  --pine: #2f6f5e;
+  --pine-soft: #e3eeea;
+  --amber: #8f5c0f;      /* "elevated" text/icons; darkened for 4.5:1 contrast on white */
+  --amber-soft: #fbf1dc;
+  --crimson: #b4234f;    /* "check in" */
+  --crimson-soft: #fbe5ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #101716;
+    --surface: #17211f;
+    --ink: #e8eeec;
+    --ink-soft: #a6b5b0;
+    --line: #2c3a37;
+    --pine: #6fbfa6;
+    --pine-soft: #1d302b;
+    --amber: #e3b25c;
+    --amber-soft: #2e2615;
+    --crimson: #f07a9c;
+    --crimson-soft: #341a23;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-soft: var(--pine-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-crimson: var(--crimson);
+  --color-crimson-soft: var(--crimson-soft);
+  --font-sans: var(--font-barlow);
+  --font-display: var(--font-barlow-condensed);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-barlow), system-ui, sans-serif;
+}
+
+/* Tabular numbers keep columns of figures aligned */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* One clearly visible keyboard focus style everywhere */
+:focus-visible {
+  outline: 2px solid var(--pine);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Shared form input style */
+.input {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+}

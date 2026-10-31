@@ -16,35 +16,8 @@ st.set_page_config(page_title="UniAthleteIQ: runner risk monitor", layout="wide"
 MODEL_PATH = paths.MODELS_DIR / "runner_model.joblib"
 HOLDOUT_PATH = paths.MODELS_DIR / "runner_holdout_predictions.csv.gz"
 
-FRIENDLY = {
-    "km_7d": "Total km, last 7 days",
-    "km_last_3d": "Total km, last 3 days",
-    "km_yesterday": "Km yesterday",
-    "hard_km_7d": "Hard km (Z5/intervals/sprint), 7 days",
-    "rest_days_7d": "Rest days, last 7 days",
-    "sessions_7d": "Sessions, last 7 days",
-    "monotony_7d": "Training monotony (mean/SD of daily km)",
-    "strain_7d": "Training strain (load × monotony)",
-    "acwr_3wk": "Acute:chronic workload ratio",
-    "km_change_vs_prev_week": "Km change vs previous week",
-    "exertion_mean_7d": "Avg perceived exertion",
-    "exertion_max_7d": "Max perceived exertion",
-    "exertion_trend": "Exertion trend (recent vs earlier days)",
-    "recovery_mean_7d": "Avg perceived recovery",
-    "recovery_min_7d": "Worst perceived recovery",
-    "recovery_trend": "Recovery trend (recent vs earlier days)",
-    "training_success_mean_7d": "Avg perceived training success",
-    "exertion_minus_recovery_7d": "Exertion minus recovery",
-    "rel total kms week 0_1": "This week's km ÷ last week's",
-    "rel total kms week 0_2": "This week's km ÷ 2 weeks ago",
-    "rel total kms week 1_2": "Last week's km ÷ 2 weeks ago",
-}
-
-
 def friendly(name):
-    if name.endswith("_vs_personal"):
-        return f"{FRIENDLY.get(name.removesuffix('_vs_personal'), name)} (vs athlete's normal, SD)"
-    return FRIENDLY.get(name, name)
+    return explain.feature_label(name)
 
 
 @st.cache_resource
