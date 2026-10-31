@@ -130,9 +130,29 @@ UniAthleteIQ/
 
 ## ▶️ How to Run
 
-1. Open the notebook in Google Colab
-2. Upload datasets or connect Google Drive
-3. Run all cells step-by-step
+### Locally (Windows)
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+jupyter notebook notebooks/injury_prediction_pipeline.ipynb
+```
+
+Put the Kaggle CSVs in `datasets/` before running:
+
+* `sports_injury_detection_dataset.csv`
+* `day_approach_maskedID_timeseries.csv`
+* `week_approach_maskedID_timeseries.csv`
+* `dataset.csv`
+* (optional, only previewed) `NBA Player Injury Stats(1951 - 2023).csv`, `basketball_injury_biomechanical_dataset.csv`
+
+Charts are written to `outputs/charts/`.
+
+### Google Colab
+
+1. Upload the project folder (with `datasets/`) to Drive and `%cd` into it
+2. Run all cells step-by-step
 
 ---
 
